@@ -100,10 +100,11 @@ impl<P, D> RcEsc<P, D> {
         self.pwm.set_duty(channel, self.min_duty.clone());
     }
 
-    pub fn calibrate<M: Clone>(&mut self, calibration_ms: M, mut delay: impl DelayMs<M>)
+    pub fn calibrate<M>(&mut self, calibration_ms: M, mut delay: impl DelayMs<M>)
     where
         P: PwmPin<Duty = D>,
         D: Clone,
+        M: Clone,
     {
         self.set_max_duty();
         delay.delay_ms(calibration_ms.clone());
@@ -131,6 +132,81 @@ impl<P, D> RcEsc<P, D> {
             self.set_channel_min_duty(channel.clone());
         }
         delay.delay_ms(calibration_ms);
+    }
+}
+
+impl<P, D> Pwm for RcEsc<P, D>
+where
+    P: Pwm<Duty = D>,
+    D: Ord + Clone,
+{
+    type Channel = P::Channel;
+
+    type Time = P::Time;
+
+    type Duty = P::Duty;
+
+    fn disable(&mut self, channel: Self::Channel) {
+        self.pwm.disable(channel);
+    }
+
+    fn enable(&mut self, channel: Self::Channel) {
+        self.pwm.enable(channel);
+    }
+
+    fn get_period(&self) -> Self::Time {
+        self.pwm.get_period()
+    }
+
+    fn get_duty(&self, channel: Self::Channel) -> Self::Duty {
+        self.pwm.get_duty(channel)
+    }
+
+    fn get_max_duty(&self) -> Self::Duty {
+        self.pwm.get_max_duty()
+    }
+
+    fn set_duty(&mut self, channel: Self::Channel, duty: Self::Duty) {
+        self.pwm.set_duty(
+            channel,
+            duty.min(self.max_duty.clone()).max(self.min_duty.clone()),
+        )
+    }
+
+    fn set_period<P2>(&mut self, period: P2)
+    where
+        P2: Into<Self::Time>,
+    {
+        self.pwm.set_period(period)
+    }
+}
+
+impl<P, D> PwmPin for RcEsc<P, D>
+where
+    P: PwmPin<Duty = D>,
+    D: Ord + Clone,
+{
+    type Duty = D;
+
+    fn disable(&mut self) {
+        self.pwm.disable()
+    }
+
+    fn enable(&mut self) {
+        self.pwm.enable()
+    }
+
+    fn get_duty(&self) -> Self::Duty {
+        self.pwm.get_duty()
+    }
+
+    fn get_max_duty(&self) -> Self::Duty {
+        self.pwm.get_max_duty()
+    }
+
+    fn set_duty(&mut self, duty: Self::Duty) {
+        self.pwm
+            .set_duty(duty.min(self.max_duty.clone()).max(self.min_duty.clone()))
     }
 }
 
