@@ -93,7 +93,7 @@ impl<P, D> Esc<P, D> {
         self.pwm.set_duty(channel, self.min_duty.clone());
     }
 
-    pub fn calibrate<M>(&mut self, calibration_ms: M, mut delay: impl DelayMs<M>)
+    pub fn calibrate<M>(&mut self, calibration_ms: M, delay: &mut impl DelayMs<M>)
     where
         P: PwmPin<Duty = D>,
         D: Clone,
@@ -109,7 +109,7 @@ impl<P, D> Esc<P, D> {
     pub fn calibrate_channels<M: Clone>(
         &mut self,
         calibration_ms: M,
-        mut delay: impl DelayMs<M>,
+        delay: &mut impl DelayMs<M>,
         channels: &[P::Channel],
     ) where
         P: Pwm<Duty = D>,
